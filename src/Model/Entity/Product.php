@@ -42,6 +42,16 @@ class Product
     }
 
     /**
+     * @param int $id
+     * @return Product
+     */
+    public function setId(int $id)
+    {
+        $this->id = $id;
+        return $this;
+    }
+
+    /**
      * @return string
      */
     public function getName(): string
@@ -50,11 +60,31 @@ class Product
     }
 
     /**
+     * @param string $name
+     * @return Product
+     */
+    public function setName(string $name): Product
+    {
+        $this->name = $name;
+        return $this;
+    }
+
+    /**
      * @return float
      */
     public function getPrice(): float
     {
         return $this->price;
+    }
+
+    /**
+     * @param float $price
+     * @return Product
+     */
+    public function setPrice(float $price): Product
+    {
+        $this->price = $price;
+        return $this;
     }
 
     /**
