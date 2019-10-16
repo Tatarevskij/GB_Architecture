@@ -12,7 +12,6 @@ namespace Service\Comparator;
 
 
 use Model\Entity\Product;
-use Service\Product\ComparatorInterface;
 
 class PriceComparator implements ComparatorInterface
 {

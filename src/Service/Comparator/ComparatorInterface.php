@@ -7,7 +7,7 @@
  */
 declare(strict_types = 1);
 
-namespace Service\Product;
+namespace Service\Comparator;
 
 
 interface ComparatorInterface
