@@ -12,6 +12,7 @@ namespace Service\Product;
 
 
 use Model\Entity\Product;
+use Service\Comparator\ComparatorInterface;
 
 class ProductSorter
 {
