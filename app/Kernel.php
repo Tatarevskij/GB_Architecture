@@ -2,6 +2,8 @@
 
 declare(strict_types = 1);
 
+use Framework\Command\CommandRegisterConfig;
+use Framework\Command\CommandRegisterRoutes;
 use Framework\Registry;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -28,6 +30,10 @@ class Kernel
      */
     protected $containerBuilder;
 
+    /**
+     * Kernel constructor.
+     * @param ContainerBuilder $containerBuilder
+     */
     public function __construct(ContainerBuilder $containerBuilder)
     {
         $this->containerBuilder = $containerBuilder;
@@ -36,45 +42,33 @@ class Kernel
     /**
      * @param Request $request
      * @return Response
+     * @throws Exception
      */
     public function handle(Request $request): Response
     {
-        $this->registerConfigs();
-        $this->registerRoutes();
+        (new CommandRegisterConfig(
+            __DIR__ . DIRECTORY_SEPARATOR . 'config',
+            $this->containerBuilder
+        ))->execute();
+        (new CommandRegisterRoutes(
+            __DIR__ . DIRECTORY_SEPARATOR . 'config',
+            $this->containerBuilder
+        ))->execute();
 
         return $this->process($request);
     }
 
     /**
-     * @return void
-     */
-    protected function registerConfigs(): void
-    {
-        try {
-            $fileLocator = new FileLocator(__DIR__ . DIRECTORY_SEPARATOR . 'config');
-            $loader = new PhpFileLoader($this->containerBuilder, $fileLocator);
-            $loader->load('parameters.php');
-        } catch (\Throwable $e) {
-            die('Cannot read the config file. File: ' . __FILE__ . '. Line: ' . __LINE__);
-        }
-    }
-
-    /**
-     * @return void
-     */
-    protected function registerRoutes(): void
-    {
-        $this->routeCollection = require __DIR__ . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'routing.php';
-        $this->containerBuilder->set('route_collection', $this->routeCollection);
-    }
-
-    /**
      * @param Request $request
      * @return Response
+     * @throws Exception
      */
     protected function process(Request $request): Response
     {
-        $matcher = new UrlMatcher($this->routeCollection, new RequestContext());
+        $matcher = new UrlMatcher(
+            $this->containerBuilder->get('route_collection'),
+            new RequestContext()
+        );
         $matcher->getContext()->fromRequest($request);
 
         try {
@@ -82,18 +76,20 @@ class Kernel
             $request->setSession(new Session());
 
             $controller = (new ControllerResolver())->getController($request);
-            $arguments = (new ArgumentResolver())->getArguments($request, $controller);
+            $arguments = (new ArgumentResolver())->getArguments($request,
+                $controller);
 
             return call_user_func_array($controller, $arguments);
         } catch (ResourceNotFoundException $e) {
-            return new Response('Page not found. 404', Response::HTTP_NOT_FOUND);
+            return new Response('Page not found. 404',
+                Response::HTTP_NOT_FOUND);
         } catch (\Throwable $e) {
             $error = 'Server error occurred. 500';
             if (Registry::getDataConfig('environment') === 'dev') {
                 $error .= '<pre>' . $e->getTraceAsString() . '</pre>';
             }
-
             return new Response($error, Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 }
+
